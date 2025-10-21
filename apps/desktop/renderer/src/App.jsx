@@ -1,6 +1,6 @@
 import React from 'react';
 import LoginForm from './components/LoginForm.jsx';
-import ItemsPage from './pages/ItemPage.jsx'; 
+import ItemsPage from './pages/ItemsPage.jsx'; 
 
 export default function App() {
   const [user, setUser] = React.useState(null);
