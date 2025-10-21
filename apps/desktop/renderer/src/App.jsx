@@ -1,48 +1,28 @@
 import React from 'react';
 import LoginForm from './components/LoginForm.jsx';
-import ItemsHeader from './components/ItemsHeader.jsx';
-import ItemsTable from './components/ItemsTable.jsx';
+import ItemsPage from './pages/ItemPage.jsx'; 
 
 export default function App() {
   const [user, setUser] = React.useState(null);
   const [email, setEmail] = React.useState('admin@example.com');
   const [password, setPassword] = React.useState('admin123');
-  const [items, setItems] = React.useState([]);
+  const [view, setView] = React.useState('menu'); // 'menu' | 'items' | 'reports'
+  const [loading, setLoading] = React.useState(false);
 
   async function doLogin(e) {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
-    console.log('[UI] doLogin clicked', { email });      // <— LOG
-
     try {
       const u = await window.api.auth.login({ email, password });
-      console.log('[UI] login success', u);              // <— LOG
       setUser(u);
-      const res = await window.api.items.list({});
-      setItems(res.items);
+      setView('menu');
     } catch (err) {
-      console.error('[UI] login failed', err);           // <— LOG
       alert(`Login failed: ${err?.message ?? String(err)}`);
       setPassword('');
     } finally {
       setLoading(false);
     }
-  }
-
-  async function addDemoItem() {
-    const dto = {
-      title: '22K Bracelet',
-      category: 'bracelet',
-      metal: 'Au',
-      karat: '22K',
-      weight_g: 8.5,
-      condition: 'NEW',
-      currentState: 'READY'
-    };
-    await globalThis.api.items.create(dto);
-    const res = await globalThis.api.items.list({});
-    setItems(res.items);
   }
 
   if (!user) {
@@ -51,6 +31,7 @@ export default function App() {
         <LoginForm
           email={email}
           password={password}
+          loading={loading}
           onEmailChange={setEmail}
           onPasswordChange={setPassword}
           onSubmit={doLogin}
@@ -59,13 +40,44 @@ export default function App() {
     );
   }
 
+  if (view === 'items') {
+    return <ItemsPage onBack={() => setView('menu')} />;
+  }
+
+  if (view === 'reports') {
+    return (
+      <div className="min-h-screen p-6">
+        <div className="max-w-5xl mx-auto space-y-4">
+          <header className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Reports</h1>
+            <button className="px-3 py-2 rounded border" onClick={() => setView('menu')}>Back</button>
+          </header>
+          <div className="p-6 rounded-xl border bg-white text-gray-500">
+            (Reports coming soon)
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Menu
   return (
-    <div className="p-6 space-y-4">
-      <ItemsHeader title="Items" onAddDemo={addDemoItem} />
-      <ItemsTable items={items} />
-      <button onClick={() => setUser(null)} className="mt-4 px-3 py-2 rounded bg-red-600 text-white">
-        Logout
-      </button>
+    <div className="min-h-screen p-6 bg-gray-50">
+      <div className="max-w-xl mx-auto space-y-4">
+        <h1 className="text-2xl font-bold">Main Menu</h1>
+        <div className="grid grid-cols-1 gap-3">
+          <button className="p-4 rounded-xl border bg-white text-left hover:shadow"
+                  onClick={() => setView('items')}>
+            <div className="text-lg font-semibold">Items</div>
+            <div className="text-sm text-gray-500">View, edit, and manage inventory</div>
+          </button>
+          <button className="p-4 rounded-xl border bg-white text-left hover:shadow"
+                  onClick={() => setView('reports')}>
+            <div className="text-lg font-semibold">Reports</div>
+            <div className="text-sm text-gray-500">Sales & inventory reports (soon)</div>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
