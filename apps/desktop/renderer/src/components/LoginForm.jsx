@@ -5,10 +5,14 @@ export default function LoginForm({
   password,
   onEmailChange,
   onPasswordChange,
-  onSubmit
+  onSubmit,
+  loading
 }) {
   return (
-    <form onSubmit={onSubmit} className="bg-white p-6 rounded-xl shadow-md w-96 space-y-3">
+    <form
+      onSubmit={onSubmit}
+      className="bg-white p-6 rounded-xl shadow-md w-96 space-y-3"
+    >
       <h1 className="text-xl font-semibold">Sign in</h1>
 
       <input
@@ -16,6 +20,7 @@ export default function LoginForm({
         value={email}
         onChange={(e) => onEmailChange(e.target.value)}
         placeholder="Email"
+        disabled={loading}
       />
 
       <input
@@ -24,11 +29,23 @@ export default function LoginForm({
         value={password}
         onChange={(e) => onPasswordChange(e.target.value)}
         placeholder="Password"
+        disabled={loading}
       />
 
-      <button className="w-full bg-black text-white py-2 rounded">Login</button>
+      <button
+        type="submit"
+        disabled={loading}
+        className={`w-full py-2 rounded text-white transition ${loading
+          ? 'bg-gray-400 cursor-not-allowed'
+          : 'bg-black hover:bg-gray-800'
+          }`}
+      >
+        {loading ? 'Logging in...' : 'Login'}
+      </button>
 
-      <p className="text-xs text-gray-500">Demo: admin@example.com / admin123</p>
+      <p className="text-xs text-gray-500">
+        Demo: admin@example.com / admin123
+      </p>
     </form>
   );
 }
@@ -39,4 +56,5 @@ LoginForm.propTypes = {
   onEmailChange: PropTypes.func.isRequired,
   onPasswordChange: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
+  loading: PropTypes.bool
 };
