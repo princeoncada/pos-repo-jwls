@@ -1,0 +1,17 @@
+
+node_modules
+dist
+out
+*.log
+.DS_Store
+.env
+/.data
+/apps/desktop/renderer/node_modules
+/apps/desktop/electron/node_modules
+/packages/*/node_modules
+/shared/*/node_modules
+/apps/desktop/renderer/dist
+/apps/desktop/electron/dist
+/apps/desktop/electron/build
+/apps/desktop/electron/out
+/prisma/dev.db-journal

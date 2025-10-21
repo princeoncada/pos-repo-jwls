@@ -1,0 +1,34 @@
+{
+  "name": "jewelry-pos",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/desktop/*",
+    "packages/*",
+    "shared/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n RENDERER,ELECTRON \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev:renderer": "npm --workspace @app/renderer run dev",
+    "dev:electron": "npm --workspace @app/electron run dev",
+    "build": "npm -w @app/renderer run build && npm -w @app/electron run build",
+    "dist": "npm -w @app/electron run dist",
+    "prisma": "prisma",
+    "migrate": "prisma migrate dev",
+    "seed": "node scripts/seed.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prisma": "^6.17.1",
+    "rimraf": "^5.0.7",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.17.1",
+    "prop-types": "^15.8.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

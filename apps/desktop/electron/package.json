@@ -1,0 +1,36 @@
+{
+  "name": "@app/electron",
+  "version": "0.1.0",
+  "type": "commonjs",
+  "main": "main.cjs",
+  "scripts": {
+    "dev": "wait-on tcp:5173 && electron .",
+    "build": "echo \"No separate build step for main\"",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "@modules/auth": "0.1.0",
+    "@modules/inventory": "0.1.0",
+    "@modules/audit": "0.1.0",
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.jewelry.pos",
+    "files": [
+      "**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../../..//.data",
+        "to": ".data",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
+  }
+}
