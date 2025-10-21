@@ -1,26 +1,18 @@
-// apps/desktop/electron/preload.cjs
 const { contextBridge, ipcRenderer } = require('electron');
-
-function safeInvoke(channel, payload) {
-  // adds consistent error surface to renderer
-  return ipcRenderer.invoke(channel, payload);
-}
 
 contextBridge.exposeInMainWorld('api', {
   auth: {
     login: (cred) => {
-      console.log('[PRELOAD] invoke auth:login', cred?.email);  // <— LOG
-      return safeInvoke('auth:login', cred);
+      console.log('[PRELOAD] auth:login', cred?.email);
+      return ipcRenderer.invoke('auth:login', cred);
     }
   },
   items: {
-    list: (params) => {
-      console.log('[PRELOAD] invoke items:list');               // <— LOG
-      return safeInvoke('items:list', params);
-    },
-    create: (dto) => {
-      console.log('[PRELOAD] invoke items:create');             // <— LOG
-      return safeInvoke('items:create', dto);
-    }
+    list: (params)          => ipcRenderer.invoke('items:list', params),
+    create: (dto)           => ipcRenderer.invoke('items:create', dto),
+    get:    (id)            => ipcRenderer.invoke('items:get', { id }),
+    update: (id, dto)       => ipcRenderer.invoke('items:update', { id, dto }),
+    remove: (id)            => ipcRenderer.invoke('items:delete', { id }),
+    openEditWindow: (id)    => ipcRenderer.invoke('items:openEditWindow', { id })
   }
 });
