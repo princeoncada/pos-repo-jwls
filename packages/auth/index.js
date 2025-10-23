@@ -43,7 +43,13 @@ export async function setPassword({ email, newPassword }) {
  * - Else if legacy SHA256 matches → success + upgrade to bcrypt
  */
 export async function login({ email, password }) {
-  const user = await prisma.user.findUnique({ where: { email } });
+  // Pull everything we need up-front, including role
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: {
+      role: { select: { id: true, name: true, policies: true } }
+    }
+  });
   if (!user || !user.isActive) throw new Error('Invalid credentials');
 
   // try bcrypt first
@@ -76,5 +82,15 @@ export async function login({ email, password }) {
   if (needsUpgrade) updates.passwordHash = await hashPassword(password);
   await prisma.user.update({ where: { id: user.id }, data: updates });
 
-  return { id: user.id, email: user.email, displayName: user.displayName };
+  // Return user with role
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    role: user.role ? {
+      id: user.role.id,
+      name: user.role.name,
+      policies: user.role.policies ?? null
+    } : null
+  };
 }
