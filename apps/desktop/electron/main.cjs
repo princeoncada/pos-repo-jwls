@@ -55,11 +55,21 @@ app.whenReady().then(async () => {
     }
   });
 
-  ipcMain.handle('items:list',   async (_evt, params)       => inventory.listItems(params || {}));
-  ipcMain.handle('items:create', async (_evt, { dto })      => inventory.createItem(dto));
-  ipcMain.handle('items:get',    async (_evt, { id })       => inventory.getItem(id));
-  ipcMain.handle('items:update', async (_evt, { id, dto })  => inventory.updateItem(id, dto));
-  ipcMain.handle('items:delete', async (_evt, { id })       => inventory.deleteItem(id));
+  ipcMain.handle('items:list', async (_evt, params) => inventory.listItems(params || {}));
+  ipcMain.handle('items:create', async (_evt, { dto }) => inventory.createItem(dto));
+  ipcMain.handle('items:get', async (_evt, { id }) => inventory.getItem(id));
+  ipcMain.handle('items:update', async (_evt, { id, dto }) => inventory.updateItem(id, dto));
+  ipcMain.handle('items:delete', async (_evt, { id }) => inventory.deleteItem(id));
+
+  // Reference lists
+  ipcMain.handle('refs:branches', async () => inventory.listBranches());
+  ipcMain.handle('refs:suppliers', async () => inventory.listSuppliers());
+  ipcMain.handle('refs:categories', async () => inventory.listCategories());
+
+  // Admin creates (protect with your auth/role check as needed)
+  ipcMain.handle('admin:createBranch', async (_e, dto) => inventory.createBranch(dto));
+  ipcMain.handle('admin:createSupplier', async (_e, dto) => inventory.createSupplier(dto));
+  ipcMain.handle('admin:createCategory', async (_e, dto) => inventory.createCategory(dto));
 
   // Open a NEW EDIT WINDOW
   ipcMain.handle('items:openEditWindow', async (_e, { id }) => {
@@ -83,6 +93,39 @@ app.whenReady().then(async () => {
     }
     child.once('ready-to-show', () => child.show());
     return true;
+  });
+
+  /** NEW: Open Add Item/s window */
+  ipcMain.handle('items:openAddWindow', async () => {
+    const child = new BrowserWindow({
+      width: 1100,
+      height: 720,
+      parent: win,
+      modal: true,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.cjs'),
+        nodeIntegration: false,
+        contextIsolation: true
+      }
+    });
+    if (isDev) {
+      await child.loadURL(`http://localhost:5173/?addItems=1`);
+    } else {
+      await child.loadFile(path.join(__dirname, '../renderer/dist/index.html'), {
+        search: `?addItems=1`
+      });
+    }
+    child.once('ready-to-show', () => child.show());
+    return true;
+  });
+
+  /** NEW: bulk create (sequential) */
+  ipcMain.handle('items:createBulk', async (_evt, rows) => {
+    return inventory.createItemsBulk(rows || []);
+  });
+
+  ipcMain.handle('items:nextSeq', async (_e, { branchId, categoryId }) => {
+    return inventory.getNextSeq({ branchId, categoryId });
   });
 
   createWindow();
