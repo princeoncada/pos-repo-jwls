@@ -23,7 +23,7 @@ model User {
   tasks        UserTaskLog[]
   authEvents   AuthEvent[]
   createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  updatedAt    DateTime      @default(now()) @updatedAt
 }
 
 model Role {
@@ -74,22 +74,48 @@ model Branch {
   code  String @unique
   name  String
   items Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  notes     String?
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String   @unique
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model Item {
-  id              String   @id @default(cuid())
-  sku             String?  @unique
+  id              String    @id @default(cuid())
+  itemCode        String    @unique
   title           String
-  category        String
+  categoryId      String
+  category        Category  @relation(fields: [categoryId], references: [id])
+  branchId        String
+  branch          Branch    @relation(fields: [branchId], references: [id])
+  supplierId      String?
+  supplier        Supplier? @relation(fields: [supplierId], references: [id])
   metal           String
   karat           String
-  weight_g        Float
-  stone_desc      String?
-  cert_no         String?
+  weight_g        Float?
   condition       String
-  currentState    String
-  currentBranchId String?
-  branch          Branch?  @relation(fields: [currentBranchId], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  status          String    @default("AVAILABLE")
+  cost            Float?
+  costCode        String?
+  typeSeq         Int
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+
+  @@unique([branchId, categoryId, typeSeq])
 }
