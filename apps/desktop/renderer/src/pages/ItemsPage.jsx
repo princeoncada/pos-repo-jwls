@@ -9,40 +9,33 @@ export default function ItemsPage({ onBack }) {
   const [total, setTotal] = React.useState(0);
   const [page, setPage] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
+
+  // Persist selection across pages
   const [selectedIds, setSelectedIds] = React.useState(() => new Set());
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-
   const load = React.useCallback(async () => {
+    let mounted = true;
     setLoading(true);
-    const skip = (page - 1) * PAGE_SIZE;
-    const res = await window.api.items.list({ take: PAGE_SIZE, skip });
-    setItems(res.items || []);
-    setTotal(res.total || 0);
-    setSelectedIds(new Set());
-    setLoading(false);
+    try {
+      const skip = (page - 1) * PAGE_SIZE;
+      const res = await window.api.items.list({ take: PAGE_SIZE, skip });
+      if (!mounted) return;
+      setItems(res.items || []);
+      setTotal(res.total || 0);
+
+      // ❌ Do NOT reset selection here; keep selections across pages
+      // setSelectedIds(new Set());
+    } catch (e) {
+      if (mounted) alert(`Failed to load items: ${e?.message ?? String(e)}`);
+    } finally {
+      if (mounted) setLoading(false);
+    }
+    return () => { mounted = false; };
   }, [page]);
 
-  React.useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const skip = (page - 1) * PAGE_SIZE;
-        const res = await window.api.items.list({ take: PAGE_SIZE, skip });
-        if (!alive) return;
-        setItems(res.items || []);
-        setTotal(res.total || 0);
-        setSelectedIds(new Set());
-      } catch (e) {
-        if (alive) alert(`Failed to load items: ${e?.message ?? String(e)}`);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => { alive = false; };
-  }, [page]);
+  React.useEffect(() => { load(); }, [load]);
 
   // Refresh when window regains focus (helps after closing Edit modal)
   React.useEffect(() => {
@@ -51,6 +44,7 @@ export default function ItemsPage({ onBack }) {
     return () => window.removeEventListener('focus', handleFocus);
   }, [load]);
 
+  // Keep selection helpers
   function toggleSelect(id, checked) {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -59,9 +53,34 @@ export default function ItemsPage({ onBack }) {
     });
   }
 
+  // Header checkbox: add/remove ONLY current page items
   function toggleSelectAll(checked) {
-    if (checked) setSelectedIds(new Set(items.map(i => i.id)));
-    else setSelectedIds(new Set());
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      const pageIds = items.map(i => i.id);
+      if (checked) {
+        pageIds.forEach(id => next.add(id));    // union
+      } else {
+        pageIds.forEach(id => next.delete(id)); // subtract
+      }
+      return next;
+    });
+  }
+
+  // If you delete an item, also drop it from selection (so count stays accurate)
+  async function handleDelete(id) {
+    if (!confirm('Are you sure you want to remove this item from Inventory?')) return;
+    try {
+      await window.api.items.remove(id);
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      load();
+    } catch (e) {
+      alert(`Delete failed: ${e?.message ?? String(e)}`);
+    }
   }
 
   return (
@@ -86,18 +105,9 @@ export default function ItemsPage({ onBack }) {
             onToggleAll={toggleSelectAll}
             onEdit={async (id) => {
               await window.api.items.openEditWindow(id);
-              // after closing edit window, refresh list:
               load();
             }}
-            onDelete={async (id) => {
-              if (!confirm('Are you sure you want to remove this item from Inventory?')) return;
-              try {
-                await window.api.items.remove(id);
-                load();
-              } catch (e) {
-                alert(`Delete failed: ${e?.message ?? String(e)}`);
-              }
-            }}
+            onDelete={handleDelete}
           />
           <div className="p-3 border-t">
             <Pagination
@@ -110,10 +120,10 @@ export default function ItemsPage({ onBack }) {
           </div>
         </div>
 
-        {/* Bulk action scaffold (UI only for now) */}
+        {/* Bulk action scaffold */}
         <div className="rounded-xl border bg-white p-4 flex flex-wrap items-center gap-2">
           <span className="text-sm text-gray-600">
-            Selected: <b>{selectedIds.size}</b>
+            Selected across pages: <b>{selectedIds.size}</b>
           </span>
           <button className="px-3 py-2 rounded border disabled:opacity-50" disabled>
             Edit selected (soon)
@@ -121,8 +131,13 @@ export default function ItemsPage({ onBack }) {
           <button className="px-3 py-2 rounded border disabled:opacity-50" disabled>
             Delete selected (soon)
           </button>
-          <div className="ml-auto text-sm text-gray-500">
-            Add group of items (UI coming next)
+          <div className="ml-auto">
+            <button
+              className="px-3 py-2 rounded border"
+              onClick={() => window.api.items.openAddWindow()}
+            >
+              Add Item/s
+            </button>
           </div>
         </div>
       </div>
