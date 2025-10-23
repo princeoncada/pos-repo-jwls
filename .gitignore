@@ -15,3 +15,4 @@ out
 /apps/desktop/electron/build
 /apps/desktop/electron/out
 /prisma/dev.db-journal
+/packages/platform/prisma-client
